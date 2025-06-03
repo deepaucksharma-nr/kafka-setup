@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-enhanced-ohi-config
+  namespace: kafka-monitoring
+data:
+  kafka-enhanced-ohi-config.yml: |
+    integrations:
+      - name: com.newrelic.kafka-enhanced
+        exec: /scripts/run-enhanced-ohi.sh
+        interval: 30s
+        env:
+          # Endpoints
+          PROMETHEUS_ENDPOINT: "http://kafka-0.kafka:9404/metrics"
+          KAFKA_BOOTSTRAP_SERVERS: "kafka-0.kafka:9092"
+          JMX_ENDPOINT: "kafka-0.kafka:9999"
+          
+          # Collection modes (all enabled by default)
+          COLLECT_CONSUMER_GROUPS: "true"
+          COLLECT_SHARE_GROUPS: "true"
+          COLLECT_PRODUCERS: "true"
+          COLLECT_BROKER_HEALTH: "true"
+          
+          # Entity configuration
+          CLUSTER_NAME: "kafka-k8s-cluster"
+          ENVIRONMENT: "production"
+          REGION: "us-east-1"
+          SERVICE_NAME: "kafka-monitoring"
+          CLOUD_PROVIDER: "self-hosted"
+          
+        custom_attributes:
+          environment: kubernetes
+          cluster_name: kafka-k8s-cluster
+          monitoring_version: enhanced-v2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-enhanced-ohi
+  namespace: kafka-monitoring
+  labels:
+    app: kafka-enhanced-ohi
+    monitoring: enhanced
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-enhanced-ohi
+  template:
+    metadata:
+      labels:
+        app: kafka-enhanced-ohi
+        monitoring: enhanced
+    spec:
+      serviceAccountName: newrelic-infrastructure
+      containers:
+      - name: newrelic-infra
+        image: newrelic/infrastructure:latest
+        env:
+        - name: NRIA_LICENSE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: kafka-env-secret
+              key: NEW_RELIC_LICENSE_KEY
+        - name: NRIA_DISPLAY_NAME
+          value: "kafka-enhanced-ohi"
+        - name: CLUSTER_NAME
+          value: "kafka-k8s-monitoring"
+        - name: NRIA_CUSTOM_ATTRIBUTES
+          value: '{"purpose":"enhanced-kafka-monitoring","deployment":"kubernetes","monitoring_version":"v2"}'
+        - name: NRIA_LOG_LEVEL
+          value: "info"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: ohi-scripts
+          mountPath: /scripts
+        - name: ohi-config
+          mountPath: /var/db/newrelic-infra/integrations.d/kafka-enhanced-ohi.yml
+          subPath: kafka-enhanced-ohi-config.yml
+        - name: ohi-definition
+          mountPath: /var/db/newrelic-infra/custom-integrations/kafka-enhanced-definition.yml
+          subPath: kafka-enhanced-definition.yml
+      volumes:
+      - name: ohi-scripts
+        configMap:
+          name: kafka-enhanced-ohi-scripts
+          defaultMode: 0755
+      - name: ohi-config
+        configMap:
+          name: kafka-enhanced-ohi-config
+      - name: ohi-definition
+        configMap:
+          name: kafka-enhanced-ohi-definition
+---
+# Add RBAC permissions if needed for advanced metrics collection
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kafka-enhanced-ohi
+  namespace: kafka-monitoring
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "statefulsets"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kafka-enhanced-ohi
+  namespace: kafka-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kafka-enhanced-ohi
+subjects:
+- kind: ServiceAccount
+  name: newrelic-infrastructure
+  namespace: kafka-monitoring

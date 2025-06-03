@@ -1,0 +1,335 @@
+{
+  "analysis": {
+    "eventTypes": {
+      "KafkaBrokerSample": {
+        "name": "KafkaBrokerSample",
+        "attributes": [
+          {
+            "name": "broker.messagesInPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "broker.bytesInPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "broker.bytesOutPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "request.avgTimeFetch",
+            "type": "number"
+          },
+          {
+            "name": "request.avgTimeProduceRequest",
+            "type": "number"
+          },
+          {
+            "name": "request.produceRequestsFailedPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "request.handlerIdle",
+            "type": "number"
+          },
+          {
+            "name": "replication.unreplicatedPartitions",
+            "type": "number"
+          },
+          {
+            "name": "consumer.requestsExpiredPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "connection.count",
+            "type": "number"
+          }
+        ],
+        "volume": 1000
+      },
+      "SystemSample": {
+        "name": "SystemSample",
+        "attributes": [
+          {
+            "name": "cpuPercent",
+            "type": "number"
+          },
+          {
+            "name": "memoryUsedPercent",
+            "type": "number"
+          },
+          {
+            "name": "diskUsedPercent",
+            "type": "number"
+          }
+        ],
+        "volume": 2000
+      }
+    },
+    "metrics": {
+      "kafka_sharegroup_records_unacked": {
+        "name": "kafka_sharegroup_records_unacked",
+        "type": "metric",
+        "unit": "count",
+        "category": "other"
+      },
+      "kafka_consumer_ConsumerLag": {
+        "name": "kafka_consumer_ConsumerLag",
+        "type": "metric",
+        "unit": "count",
+        "category": "other"
+      }
+    },
+    "categories": {
+      "other": [
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "broker.messagesInPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "broker.bytesInPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "broker.bytesOutPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "request.avgTimeFetch",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "request.avgTimeProduceRequest",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "request.produceRequestsFailedPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "request.handlerIdle",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "consumer.requestsExpiredPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "SystemSample",
+          "attribute": "cpuPercent",
+          "type": "number"
+        },
+        {
+          "eventType": "SystemSample",
+          "attribute": "memoryUsedPercent",
+          "type": "number"
+        },
+        {
+          "eventType": "SystemSample",
+          "attribute": "diskUsedPercent",
+          "type": "number"
+        },
+        {
+          "metricName": "kafka_sharegroup_records_unacked",
+          "type": "metric",
+          "unit": "count"
+        },
+        {
+          "metricName": "kafka_consumer_ConsumerLag",
+          "type": "metric",
+          "unit": "count"
+        }
+      ],
+      "replication": [
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "replication.unreplicatedPartitions",
+          "type": "number"
+        }
+      ],
+      "count": [
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "connection.count",
+          "type": "number"
+        }
+      ]
+    },
+    "timeSeries": [],
+    "aggregations": [],
+    "dimensions": [],
+    "goldenSignals": {
+      "latency": [],
+      "traffic": [
+        "KafkaBrokerSample.broker.messagesInPerSecond",
+        "KafkaBrokerSample.request.avgTimeFetch",
+        "KafkaBrokerSample.request.avgTimeProduceRequest",
+        "KafkaBrokerSample.request.produceRequestsFailedPerSecond",
+        "KafkaBrokerSample.request.handlerIdle",
+        "KafkaBrokerSample.consumer.requestsExpiredPerSecond"
+      ],
+      "errors": [],
+      "saturation": []
+    }
+  },
+  "catalogPage": {
+    "name": "All Metrics Catalog",
+    "description": "Complete catalog of discovered metrics organized by intelligent categorization",
+    "widgets": [
+      {
+        "title": "📚 Complete Metrics Catalog",
+        "visualization": {
+          "id": "viz.markdown"
+        },
+        "layout": {
+          "column": 1,
+          "row": 1,
+          "height": 2,
+          "width": 12
+        },
+        "rawConfiguration": {
+          "text": "# Complete Metrics Catalog\n\n**Discovery Summary**\n- Total Metrics: 15\n- Event Types: 2\n- Categories: 3\n\n**Intelligent Categorization Applied**\n- **Other Metrics**: 13 metrics\\n- **Replication Metrics**: 1 metrics\\n- **Count Metrics**: 1 metrics\\n\\n**Visualization Types**: Each category uses optimal chart types based on metric characteristics."
+        }
+      },
+      {
+        "title": "📊 Other Metrics - KafkaBrokerSample",
+        "visualization": {
+          "id": "viz.line"
+        },
+        "layout": {
+          "column": 1,
+          "row": 3,
+          "height": 3,
+          "width": 8
+        },
+        "rawConfiguration": {
+          "nrqlQueries": [
+            {
+              "accountId": 3630072,
+              "query": "SELECT average(broker.messagesInPerSecond) as 'Messages In Per Second', average(broker.bytesInPerSecond) as 'Bytes In Per Second', average(broker.bytesOutPerSecond) as 'Bytes Out Per Second', average(request.avgTimeFetch) as 'Avg Time Fetch', average(request.avgTimeProduceRequest) as 'Avg Time Produce Request' FROM KafkaBrokerSample  SINCE 1 hour ago"
+            }
+          ]
+        }
+      },
+      {
+        "title": "📊 Other Metrics - SystemSample",
+        "visualization": {
+          "id": "viz.line"
+        },
+        "layout": {
+          "column": 9,
+          "row": 3,
+          "height": 3,
+          "width": 6
+        },
+        "rawConfiguration": {
+          "nrqlQueries": [
+            {
+              "accountId": 3630072,
+              "query": "SELECT average(cpuPercent) as 'Cpu Percent', average(memoryUsedPercent) as 'Memory Used Percent', average(diskUsedPercent) as 'Disk Used Percent' FROM SystemSample  SINCE 1 hour ago"
+            }
+          ]
+        }
+      },
+      {
+        "title": "📊 Other Metrics - Metric",
+        "visualization": {
+          "id": "viz.line"
+        },
+        "layout": {
+          "column": 1,
+          "row": 6,
+          "height": 3,
+          "width": 6
+        },
+        "rawConfiguration": {
+          "nrqlQueries": [
+            {
+              "accountId": 3630072,
+              "query": "SELECT average(kafka_sharegroup_records_unacked) as 'Kafka Sharegroup Records Unacked', average(kafka_consumer_ConsumerLag) as 'Kafka Consumer  Consumer Lag' FROM Metric WHERE metricName IN ('kafka_sharegroup_records_unacked', 'kafka_consumer_ConsumerLag')  SINCE 1 hour ago"
+            }
+          ]
+        }
+      },
+      {
+        "title": "🔄 Replication Metrics - KafkaBrokerSample",
+        "visualization": {
+          "id": "viz.line"
+        },
+        "layout": {
+          "column": 1,
+          "row": 10,
+          "height": 3,
+          "width": 6
+        },
+        "rawConfiguration": {
+          "nrqlQueries": [
+            {
+              "accountId": 3630072,
+              "query": "SELECT average(replication.unreplicatedPartitions) as 'Unreplicated Partitions' FROM KafkaBrokerSample  SINCE 1 hour ago"
+            }
+          ]
+        }
+      },
+      {
+        "title": "🔢 Count Metrics - KafkaBrokerSample",
+        "visualization": {
+          "id": "viz.billboard"
+        },
+        "layout": {
+          "column": 1,
+          "row": 14,
+          "height": 3,
+          "width": 2
+        },
+        "rawConfiguration": {
+          "nrqlQueries": [
+            {
+              "accountId": 3630072,
+              "query": "SELECT sum(connection.count) as 'Count' FROM KafkaBrokerSample  SINCE 1 hour ago"
+            }
+          ]
+        }
+      },
+      {
+        "title": "📊 All Metrics Summary Table",
+        "visualization": {
+          "id": "viz.table"
+        },
+        "layout": {
+          "column": 1,
+          "row": 18,
+          "height": 5,
+          "width": 12
+        },
+        "rawConfiguration": {
+          "nrqlQueries": [
+            {
+              "accountId": 3630072,
+              "query": "SELECT latest(broker.messagesInPerSecond) as 'Messages In Per Second', latest(broker.bytesInPerSecond) as 'Bytes In Per Second', latest(broker.bytesOutPerSecond) as 'Bytes Out Per Second', latest(cpuPercent) as 'Cpu Percent', latest(memoryUsedPercent) as 'Memory Used Percent', latest(diskUsedPercent) as 'Disk Used Percent' FROM KafkaBrokerSample SINCE 5 minutes ago LIMIT 100"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "summary": {
+    "totalCategories": 3,
+    "totalMetrics": 15,
+    "totalWidgets": 7,
+    "widgetTypes": {
+      "viz.markdown": 1,
+      "viz.line": 4,
+      "viz.billboard": 1,
+      "viz.table": 1
+    }
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "dashboard": {
+    "name": "Kafka Monitoring - 2025-06-03",
+    "description": "Auto-generated Kafka monitoring dashboard with discovered metrics",
+    "permissions": "PUBLIC_READ_WRITE",
+    "pages": [
+      {
+        "name": "Kafka Overview",
+        "description": "Key Kafka metrics and health indicators",
+        "widgets": [
+          {
+            "title": "📊 Kafka Monitoring Overview",
+            "visualization": {
+              "id": "viz.markdown"
+            },
+            "layout": {
+              "column": 1,
+              "row": 1,
+              "height": 3,
+              "width": 4
+            },
+            "rawConfiguration": {
+              "text": "# Kafka Monitoring Dashboard\n\n**Generated**: 2025-06-03T13:27:41.291Z  \n**Account**: 3630072\n\n## Data Status\n✅ Kafka broker data available  \n✅ 4 Kafka metrics found  \n✅ System metrics available\n\n## Available Metrics\n- Golden Metrics: 4\n- Standard Metrics: 0"
+            }
+          },
+          {
+            "title": "📈 Message Throughput",
+            "visualization": {
+              "id": "viz.area"
+            },
+            "layout": {
+              "column": 5,
+              "row": 1,
+              "height": 3,
+              "width": 4
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT rate(sum(broker.messagesInPerSecond), 1 minute) as 'Messages/min' FROM KafkaBrokerSample TIMESERIES AUTO"
+                }
+              ]
+            }
+          },
+          {
+            "title": "⏱️ Request Latency",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 9,
+              "row": 1,
+              "height": 3,
+              "width": 4
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT average(request.avgTimeFetch) as 'Fetch', average(request.avgTimeProduceRequest) as 'Produce' FROM KafkaBrokerSample TIMESERIES AUTO"
+                }
+              ]
+            }
+          },
+          {
+            "title": "🏥 Broker Health",
+            "visualization": {
+              "id": "viz.table"
+            },
+            "layout": {
+              "column": 1,
+              "row": 4,
+              "height": 3,
+              "width": 12
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT latest(entity.name) as 'Broker', latest(broker.messagesInPerSecond) as 'Msg/sec', latest(request.handlerIdle) * 100 as 'Idle %', latest(replication.unreplicatedPartitions) as 'Unreplicated' FROM KafkaBrokerSample FACET entity.guid SINCE 10 minutes ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "🔄 Leader Elections",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 1,
+              "row": 7,
+              "height": 3,
+              "width": 4
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT average(newrelic.goldenmetrics.infra.kafkabroker.leaderElectionRate) as 'Elections/sec' FROM Metric TIMESERIES AUTO"
+                }
+              ]
+            }
+          },
+          {
+            "title": "❌ Failed Requests",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 5,
+              "row": 7,
+              "height": 3,
+              "width": 4
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT sum(newrelic.goldenmetrics.infra.kafkabroker.failedProduceRequestsPerSecond) as 'Failed/sec' FROM Metric TIMESERIES AUTO"
+                }
+              ]
+            }
+          },
+          {
+            "title": "📥 Incoming Messages",
+            "visualization": {
+              "id": "viz.area"
+            },
+            "layout": {
+              "column": 9,
+              "row": 7,
+              "height": 3,
+              "width": 4
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT average(newrelic.goldenmetrics.infra.kafkabroker.incomingMessagesPerSecond) as 'Messages/sec' FROM Metric TIMESERIES AUTO"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "System Resources",
+        "description": "Server resource utilization",
+        "widgets": [
+          {
+            "title": "💻 Resource Utilization",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 1,
+              "row": 1,
+              "height": 3,
+              "width": 12
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT average(cpuPercent) as 'CPU %', average(memoryUsedPercent) as 'Memory %', average(diskUsedPercent) as 'Disk %' FROM SystemSample TIMESERIES AUTO"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "result": {
+    "guid": "MzYzMDA3MnxWSVp8REFTSEJPQVJEfGRhOjEwMTE2NjE3",
+    "name": "Kafka Monitoring - 2025-06-03"
+  },
+  "url": "https://one.newrelic.com/dashboards/MzYzMDA3MnxWSVp8REFTSEJPQVJEfGRhOjEwMTE2NjE3",
+  "discovery": {
+    "hasBrokerData": true,
+    "kafkaMetricsCount": 4,
+    "hasSystemData": true,
+    "timestamp": "2025-06-03T13:27:41.927Z"
+  }
+}

@@ -25,15 +25,15 @@ class IntelligentDashboardBuilder {
     
     // Metric patterns for intelligent categorization
     this.metricPatterns = {
-      throughput: /\b(throughput|rate|persecond|persec|ops|tps|rps|qps)\b/i,
-      latency: /\b(latency|duration|time|delay|response|wait)\b/i,
-      error: /\b(error|fail|exception|timeout|reject|invalid)\b/i,
-      utilization: /\b(percent|percentage|usage|utilization|ratio|cpu|memory|disk)\b/i,
-      count: /\b(count|total|sum|number|size|length)\b/i,
-      gauge: /\b(current|active|open|pending|queue|backlog)\b/i,
-      bytes: /\b(bytes|size|memory|storage|bandwidth)\b/i,
-      connection: /\b(connection|session|socket|client|thread)\b/i,
-      business: /\b(revenue|cost|conversion|transaction|order|customer|user)\b/i
+      throughput: /(throughput|rate|persecond|PerSecond|persec|ops|tps|rps|qps|messages|MessagesIn|MessagesOut)/i,
+      latency: /(latency|duration|time|Time|delay|response|wait|avgTime|Percentile)/i,
+      error: /(error|Error|fail|Failed|exception|timeout|reject|invalid|expired|Expired)/i,
+      utilization: /(percent|Percent|percentage|usage|utilization|ratio|cpu|memory|disk|Idle|idle)/i,
+      count: /(count|Count|total|sum|number|size|length|lag|Lag|unacked|partition|Partitions)/i,
+      gauge: /(current|active|open|pending|queue|backlog|state|State)/i,
+      bytes: /(bytes|Bytes|size|memory|storage|bandwidth|BytesIn|BytesOut)/i,
+      connection: /(connection|Connection|session|socket|client|thread)/i,
+      replication: /(replication|Replication|replica|isr|ISR|leader|Leader|election|Election|unreplicated)/i
     };
     
     // Visualization selection matrix
@@ -46,6 +46,7 @@ class IntelligentDashboardBuilder {
       gauge: { primary: 'billboard', secondary: 'gauge', tertiary: 'line' },
       bytes: { primary: 'area', secondary: 'line', tertiary: 'billboard' },
       connection: { primary: 'line', secondary: 'area', tertiary: 'table' },
+      replication: { primary: 'line', secondary: 'billboard', tertiary: 'table' },
       business: { primary: 'billboard', secondary: 'pie', tertiary: 'funnel' }
     };
   }
@@ -232,11 +233,22 @@ class IntelligentDashboardBuilder {
    * Categorize a metric based on its name and characteristics
    */
   categorizeMetric(metricName) {
-    for (const [category, pattern] of Object.entries(this.metricPatterns)) {
-      if (pattern.test(metricName)) {
+    // Check patterns in priority order
+    const priorityOrder = ['error', 'latency', 'bytes', 'replication', 'utilization', 'count', 'throughput', 'connection', 'gauge'];
+    
+    for (const category of priorityOrder) {
+      if (this.metricPatterns[category] && this.metricPatterns[category].test(metricName)) {
         return category;
       }
     }
+    
+    // Check remaining patterns
+    for (const [category, pattern] of Object.entries(this.metricPatterns)) {
+      if (!priorityOrder.includes(category) && pattern.test(metricName)) {
+        return category;
+      }
+    }
+    
     return 'other';
   }
 
@@ -995,6 +1007,7 @@ class IntelligentDashboardBuilder {
       gauge: '🎯',
       bytes: '💾',
       connection: '🔌',
+      replication: '🔄',
       business: '💼'
     };
     return icons[category] || '📊';

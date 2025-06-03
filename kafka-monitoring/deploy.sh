@@ -23,6 +23,7 @@ usage() {
     echo "Commands:"
     echo "  generate    Generate Kubernetes configs from templates"
     echo "  deploy      Deploy to Kubernetes (default)"
+    echo "  deploy-enhanced Deploy enhanced OHI with all 4 collection modes"
     echo "  status      Check deployment status"
     echo "  clean       Clean up all resources"
     echo "  test        Run test workload"
@@ -38,6 +39,7 @@ usage() {
 ENV_FILE=".env"
 DRY_RUN=false
 COMMAND="deploy"
+DEPLOY_ENHANCED=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -171,12 +173,24 @@ EOF
     # Copy non-template files directly
     echo -e "${BLUE}📄 Copying deployment files...${NC}"
     
+    # Add enhanced OHI specific environment variables for template processing
+    export COLLECT_CONSUMER_GROUPS="${COLLECT_CONSUMER_GROUPS:-true}"
+    export COLLECT_SHARE_GROUPS="${COLLECT_SHARE_GROUPS:-true}"
+    export COLLECT_PRODUCERS="${COLLECT_PRODUCERS:-true}"
+    export COLLECT_BROKER_HEALTH="${COLLECT_BROKER_HEALTH:-true}"
+    export CLUSTER_NAME="${CLUSTER_NAME:-kafka-k8s-cluster}"
+    export SERVICE_NAME="${SERVICE_NAME:-kafka-monitoring}"
+    export CLOUD_PROVIDER="${CLOUD_PROVIDER:-self-hosted}"
+    export REGION="${REGION:-us-east-1}"
+    export OHI_VERBOSE="${OHI_VERBOSE:-1}"
+    
     # If files exist in current directory, use them; otherwise check templates
     for file in 01-kafka-zookeeper.yaml 02-kafka-broker.yaml 03-newrelic-configmap.yaml \
                 04-flex-configmap.yaml 05-newrelic-daemonset.yaml 06-test-sharegroup-consumer.yaml \
                 07-custom-ohi-configmap.yaml 08-custom-ohi-deployment.yaml \
                 09-monitoring-dashboard.yaml 10-test-workload-generator.yaml \
-                11-troubleshooting-tools.yaml; do
+                11-troubleshooting-tools.yaml 12-kafka-enhanced-ohi-configmap.yaml \
+                13-kafka-enhanced-ohi-deployment.yaml; do
         
         if [ -f "$file" ]; then
             # Use envsubst to replace variables
@@ -248,6 +262,15 @@ deploy_to_k8s() {
     
     echo -e "${BLUE}📦 Deploying troubleshooting tools...${NC}"
     [ -f generated/11-troubleshooting-tools.yaml ] && $KUBECTL_CMD -f generated/11-troubleshooting-tools.yaml
+    
+    # Deploy Enhanced OHI if requested
+    if [[ "$DEPLOY_ENHANCED" == "true" ]]; then
+        echo ""
+        echo -e "${YELLOW}🚀 Deploying Enhanced OHI with all 4 collection modes...${NC}"
+        [ -f generated/12-kafka-enhanced-ohi-configmap.yaml ] && $KUBECTL_CMD -f generated/12-kafka-enhanced-ohi-configmap.yaml
+        [ -f generated/13-kafka-enhanced-ohi-deployment.yaml ] && $KUBECTL_CMD -f generated/13-kafka-enhanced-ohi-deployment.yaml
+        echo -e "${GREEN}✅ Enhanced OHI deployed${NC}"
+    fi
     
     if [ "$DRY_RUN" = false ]; then
         echo ""
@@ -327,6 +350,10 @@ case "$COMMAND" in
         generate_configs
         ;;
     deploy)
+        deploy_to_k8s
+        ;;
+    deploy-enhanced)
+        DEPLOY_ENHANCED=true
         deploy_to_k8s
         ;;
     status)

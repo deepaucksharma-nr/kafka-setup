@@ -1,0 +1,25 @@
+{
+  "status": "running",
+  "startTime": 1748943904709,
+  "discoveries": {
+    "summary": {},
+    "eventTypes": [],
+    "metrics": [],
+    "traces": [],
+    "logs": [],
+    "customEvents": [],
+    "relationships": [],
+    "attributes": {},
+    "queries": [],
+    "insights": []
+  },
+  "statistics": {
+    "queriesExecuted": 12,
+    "queriesFailed": 0,
+    "cacheHits": 0,
+    "dataPointsDiscovered": 0,
+    "processingTime": 0
+  },
+  "timestamp": 1748944472633,
+  "version": "1.0.0"
+}

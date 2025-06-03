@@ -1,0 +1,17 @@
+[Unit]
+Description=Kafka Simulator Monitor Daemon
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=30
+WorkingDirectory=/Users/deepaksharma/Desktop/src/kafka_setup/kafka-monitoring
+ExecStartPre=/bin/bash -c 'until kubectl get nodes; do echo "Waiting for Kubernetes..."; sleep 5; done'
+ExecStart=/bin/bash /Users/deepaksharma/Desktop/src/kafka_setup/kafka-monitoring/monitor-simulator.sh
+StandardOutput=append:/var/log/kafka-simulator-monitor.log
+StandardError=append:/var/log/kafka-simulator-monitor.log
+
+[Install]
+WantedBy=multi-user.target

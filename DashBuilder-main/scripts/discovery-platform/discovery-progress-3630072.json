@@ -3,7 +3,37 @@
   "startTime": 1748943904709,
   "discoveries": {
     "summary": {},
-    "eventTypes": [],
+    "eventTypes": [
+      {
+        "name": "M",
+        "volume": 1356,
+        "attributes": {
+          "type": {
+            "type": "string",
+            "dataType": "enum",
+            "cardinality": 0,
+            "sampleValues": [],
+            "nullable": false
+          },
+          "key": {
+            "type": "string",
+            "dataType": "string",
+            "cardinality": 0,
+            "sampleValues": [],
+            "nullable": false
+          }
+        },
+        "sampleData": [],
+        "metadata": {
+          "entityCount": 0,
+          "hostCount": 0,
+          "dataRange": {
+            "earliest": null,
+            "latest": null
+          }
+        }
+      }
+    ],
     "metrics": [],
     "traces": [],
     "logs": [],
@@ -14,12 +44,12 @@
     "insights": []
   },
   "statistics": {
-    "queriesExecuted": 12,
+    "queriesExecuted": 21,
     "queriesFailed": 0,
     "cacheHits": 0,
-    "dataPointsDiscovered": 0,
+    "dataPointsDiscovered": 2,
     "processingTime": 0
   },
-  "timestamp": 1748944472633,
+  "timestamp": 1748957046117,
   "version": "1.0.0"
 }

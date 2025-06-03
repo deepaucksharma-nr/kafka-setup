@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simulator-liveness-script
+  namespace: kafka-monitoring
+data:
+  check-health.sh: |
+    #!/bin/bash
+    # Check if simulator process is running
+    if ps aux | grep -q "[p]ython3 /scripts/simulator.py"; then
+        exit 0
+    else
+        exit 1
+    fi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-comprehensive-simulator
+  namespace: kafka-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-comprehensive-simulator
+  template:
+    metadata:
+      labels:
+        app: kafka-comprehensive-simulator
+    spec:
+      containers:
+      - name: simulator
+        image: confluentinc/cp-kafka:7.5.0
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        env:
+        - name: KAFKA_HEAP_OPTS
+          value: "-Xmx256M -Xms128M"
+        - name: KAFKA_OPTS
+          value: ""
+        command:
+        - python3
+        - /scripts/simulator.py
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+        - name: liveness
+          mountPath: /health
+        livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - /health/check-health.sh
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - "ps aux | grep -q '[p]ython3 /scripts/simulator.py'"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      restartPolicy: Always
+      volumes:
+      - name: scripts
+        configMap:
+          name: kafka-comprehensive-simulator-optimized
+          defaultMode: 0755
+      - name: liveness
+        configMap:
+          name: simulator-liveness-script
+          defaultMode: 0755

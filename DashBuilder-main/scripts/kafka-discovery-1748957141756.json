@@ -1,0 +1,47 @@
+{
+  "timestamp": "2025-06-03T13:25:41.752Z",
+  "accountId": "3630072",
+  "eventTypes": [
+    {
+      "name": "K",
+      "count": 783,
+      "volume": 783,
+      "attributes": []
+    },
+    {
+      "name": "K",
+      "count": 134,
+      "volume": 134,
+      "attributes": []
+    },
+    {
+      "name": "S",
+      "count": 72,
+      "volume": 72,
+      "attributes": []
+    }
+  ],
+  "metrics": [
+    {
+      "name": "newrelic.goldenmetrics.infra.kafkabroker.leaderElectionRate",
+      "type": "metric",
+      "unit": "per_second"
+    },
+    {
+      "name": "newrelic.goldenmetrics.infra.kafkabroker.produceRequestDuration99PercentileS",
+      "type": "metric",
+      "unit": "percent"
+    },
+    {
+      "name": "newrelic.goldenmetrics.infra.kafkabroker.failedProduceRequestsPerSecond",
+      "type": "metric",
+      "unit": "per_second"
+    },
+    {
+      "name": "newrelic.goldenmetrics.infra.kafkabroker.incomingMessagesPerSecond",
+      "type": "metric",
+      "unit": "per_second"
+    }
+  ],
+  "relationships": []
+}

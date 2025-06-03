@@ -1,0 +1,611 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-enhanced-ohi-scripts
+  namespace: ${KAFKA_NAMESPACE}
+data:
+  kafka-enhanced-ohi.py: |
+    #!/usr/bin/env python3
+    """
+    Enhanced Kafka OHI for New Relic Queues & Streams
+    Supports all 4 collection modes with comprehensive QueueSample attributes
+    """
+    import json
+    import requests
+    import sys
+    import time
+    import os
+    import logging
+    from datetime import datetime
+    from urllib.parse import urlparse
+    from collections import defaultdict
+
+    # Configuration
+    PROMETHEUS_ENDPOINT = os.environ.get('PROMETHEUS_ENDPOINT', '${PROMETHEUS_ENDPOINT}')
+    KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'kafka-0.kafka:9092')
+    JMX_ENDPOINT = os.environ.get('JMX_ENDPOINT', 'kafka-0.kafka:9999')
+
+    # Collection modes
+    COLLECT_CONSUMER_GROUPS = os.environ.get('COLLECT_CONSUMER_GROUPS', '${COLLECT_CONSUMER_GROUPS:-true}').lower() == 'true'
+    COLLECT_SHARE_GROUPS = os.environ.get('COLLECT_SHARE_GROUPS', '${COLLECT_SHARE_GROUPS:-true}').lower() == 'true'
+    COLLECT_PRODUCERS = os.environ.get('COLLECT_PRODUCERS', '${COLLECT_PRODUCERS:-true}').lower() == 'true'
+    COLLECT_BROKER_HEALTH = os.environ.get('COLLECT_BROKER_HEALTH', '${COLLECT_BROKER_HEALTH:-true}').lower() == 'true'
+
+    # Entity configuration
+    CLUSTER_NAME = os.environ.get('CLUSTER_NAME', '${CLUSTER_NAME:-kafka-k8s-cluster}')
+    ENVIRONMENT = os.environ.get('ENVIRONMENT', '${ENVIRONMENT:-production}')
+    REGION = os.environ.get('REGION', '${REGION:-us-east-1}')
+    SERVICE_NAME = os.environ.get('SERVICE_NAME', '${SERVICE_NAME:-kafka-monitoring}')
+    CLOUD_PROVIDER = os.environ.get('CLOUD_PROVIDER', '${CLOUD_PROVIDER:-self-hosted}')
+
+    # OHI metadata
+    ENTITY_NAME = os.environ.get('OHI_ENTITY_NAME', 'kafka-enhanced-ohi')
+    INTEGRATION_VERSION = os.environ.get('OHI_INTEGRATION_VERSION', '2.0.0')
+    PROTOCOL_VERSION = os.environ.get('OHI_PROTOCOL_VERSION', '3')
+
+    # Set up logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
+    class MetricsParser:
+        """Parse various metrics formats"""
+        
+        @staticmethod
+        def parse_prometheus_metrics(text):
+            """Parse Prometheus text format into metrics dict"""
+            metrics = defaultdict(list)
+            
+            for line in text.strip().split('\n'):
+                if line.startswith('#') or not line:
+                    continue
+                
+                try:
+                    # Parse metric line: metric_name{labels} value
+                    if '{' in line:
+                        metric_part, value = line.rsplit(' ', 1)
+                        metric_name = metric_part.split('{')[0]
+                        labels_str = metric_part.split('{')[1].rstrip('}')
+                        
+                        # Parse labels
+                        labels = {}
+                        for label in labels_str.split(','):
+                            if '=' in label:
+                                k, v = label.split('=', 1)
+                                labels[k] = v.strip('"')
+                        
+                        metrics[metric_name].append({
+                            'labels': labels,
+                            'value': float(value)
+                        })
+                    else:
+                        # Metric without labels
+                        metric_name, value = line.rsplit(' ', 1)
+                        metrics[metric_name].append({
+                            'labels': {},
+                            'value': float(value)
+                        })
+                except Exception as e:
+                    logger.warning(f"Failed to parse metric line: {line} - {e}")
+            
+            return dict(metrics)
+
+    class QueueSampleBuilder:
+        """Build comprehensive QueueSample events"""
+        
+        def __init__(self, metrics_data):
+            self.metrics = metrics_data
+            self.timestamp = int(time.time())
+        
+        def build_base_event(self, queue_name, entity_type="topic"):
+            """Build base QueueSample event with common attributes"""
+            return {
+                "eventType": "QueueSample",
+                "timestamp": self.timestamp,
+                
+                # Entity identification
+                "provider": f"kafka-{CLOUD_PROVIDER}" if CLOUD_PROVIDER != "self-hosted" else "kafka",
+                "queue.name": queue_name,
+                "service.name": SERVICE_NAME,
+                
+                # Environment context
+                "environment": ENVIRONMENT,
+                "region": REGION,
+                "cloud.provider": CLOUD_PROVIDER,
+                "cluster.name": CLUSTER_NAME,
+                
+                # Initialize metrics with defaults
+                "queue.size": 0,
+                "queue.waitTime.avg": 0,
+                "oldest.message.age.seconds": 0,
+                "messages.in.rate": 0,
+                "messages.out.rate": 0,
+                "messages.published": 0,
+                "messages.consumed": 0,
+                "consumer.count": 0,
+                "consumer.lag.max": 0,
+                "producer.count": 0,
+                "error.rate": 0,
+                "queue.processingTime.avg": 0,
+                "queue.throughput.bytes": 0,
+            }
+        
+        def build_share_group_event(self, group, topic, partition=None):
+            """Build QueueSample for Share Group monitoring"""
+            if partition:
+                queue_name = f"{topic}-{partition}"
+                entity_name = f"entity:kafka:sharegroup:{CLUSTER_NAME}:{group}:{topic}:{partition}"
+            else:
+                queue_name = topic
+                entity_name = f"entity:kafka:sharegroup:{CLUSTER_NAME}:{group}:{topic}"
+            
+            event = self.build_base_event(queue_name)
+            event["entityName"] = entity_name
+            event["share.group.name"] = group
+            event["topic.name"] = topic
+            
+            if partition:
+                event["partition.id"] = int(partition)
+            
+            # Collect Share Group specific metrics
+            self._add_share_group_metrics(event, group, topic, partition)
+            
+            return event
+        
+        def build_consumer_group_event(self, group, topic, partition=None):
+            """Build QueueSample for Traditional Consumer Group monitoring"""
+            if partition:
+                queue_name = f"{topic}-{partition}"
+                entity_name = f"entity:kafka:consumergroup:{CLUSTER_NAME}:{group}:{topic}:{partition}"
+            else:
+                queue_name = topic
+                entity_name = f"entity:kafka:consumergroup:{CLUSTER_NAME}:{group}:{topic}"
+            
+            event = self.build_base_event(queue_name)
+            event["entityName"] = entity_name
+            event["consumer.group.name"] = group
+            event["topic.name"] = topic
+            
+            if partition:
+                event["partition.id"] = int(partition)
+            
+            # Collect Consumer Group specific metrics
+            self._add_consumer_group_metrics(event, group, topic, partition)
+            
+            return event
+        
+        def build_producer_event(self, topic, client_id=None):
+            """Build QueueSample for Producer metrics"""
+            entity_name = f"entity:kafka:topic:{CLUSTER_NAME}:{topic}"
+            
+            event = self.build_base_event(topic)
+            event["entityName"] = entity_name
+            event["topic.name"] = topic
+            
+            if client_id:
+                event["producer.client.id"] = client_id
+            
+            # Collect Producer specific metrics
+            self._add_producer_metrics(event, topic, client_id)
+            
+            return event
+        
+        def build_broker_topic_event(self, topic):
+            """Build QueueSample for Broker/Topic health"""
+            entity_name = f"entity:kafka:topic:{CLUSTER_NAME}:{topic}"
+            
+            event = self.build_base_event(topic)
+            event["entityName"] = entity_name
+            event["topic.name"] = topic
+            
+            # Collect Broker/Topic health metrics
+            self._add_broker_topic_metrics(event, topic)
+            
+            return event
+        
+        def _add_share_group_metrics(self, event, group, topic, partition):
+            """Add Share Group specific metrics to event"""
+            # Get unacked records (queue size)
+            for metric in self.metrics.get('kafka_sharegroup_records_unacked', []):
+                labels = metric['labels']
+                if (labels.get('group') == group and 
+                    labels.get('topic') == topic and 
+                    (partition is None or labels.get('partition') == partition)):
+                    event['queue.size'] += metric['value']
+            
+            # Get oldest unacked age
+            max_age = 0
+            for metric in self.metrics.get('kafka_sharegroup_oldest_unacked_ms', []):
+                labels = metric['labels']
+                if (labels.get('group') == group and 
+                    labels.get('topic') == topic and 
+                    (partition is None or labels.get('partition') == partition)):
+                    max_age = max(max_age, metric['value'])
+            event['oldest.message.age.seconds'] = max_age / 1000
+            
+            # Get acknowledged/released/rejected counts
+            for metric_name, event_key in [
+                ('kafka_sharegroup_records_acknowledged', 'messages.acknowledged'),
+                ('kafka_sharegroup_records_released', 'messages.released'),
+                ('kafka_sharegroup_records_rejected', 'messages.rejected')
+            ]:
+                for metric in self.metrics.get(metric_name, []):
+                    labels = metric['labels']
+                    if (labels.get('group') == group and 
+                        labels.get('topic') == topic and 
+                        (partition is None or labels.get('partition') == partition)):
+                        event[event_key] = event.get(event_key, 0) + metric['value']
+            
+            # Calculate rates (messages per second)
+            if event.get('messages.acknowledged', 0) > 0:
+                event['messages.out.rate'] = event['messages.acknowledged'] / 60
+            
+            # Add processing time if available
+            for metric in self.metrics.get('kafka_sharegroup_processing_time_ms', []):
+                labels = metric['labels']
+                if (labels.get('group') == group and 
+                    labels.get('topic') == topic):
+                    event['queue.processingTime.avg'] = metric['value']
+        
+        def _add_consumer_group_metrics(self, event, group, topic, partition):
+            """Add Consumer Group specific metrics to event"""
+            # Get consumer lag
+            total_lag = 0
+            max_lag = 0
+            for metric in self.metrics.get('kafka_consumer_lag', []):
+                labels = metric['labels']
+                if (labels.get('group') == group and 
+                    labels.get('topic') == topic and 
+                    (partition is None or labels.get('partition') == partition)):
+                    lag_value = metric['value']
+                    total_lag += lag_value
+                    max_lag = max(max_lag, lag_value)
+            
+            event['queue.size'] = total_lag
+            event['consumer.lag.max'] = max_lag
+            event['offset.lag'] = total_lag
+            
+            # Get consumption rate
+            for metric in self.metrics.get('kafka_consumer_records_consumed_rate', []):
+                labels = metric['labels']
+                if labels.get('group') == group:
+                    event['messages.out.rate'] += metric['value']
+                    event['messages.consumed.rate'] = metric['value']
+            
+            # Get consumer count
+            consumer_count = 0
+            for metric in self.metrics.get('kafka_consumer_group_members', []):
+                if metric['labels'].get('group') == group:
+                    consumer_count = int(metric['value'])
+            event['consumer.count'] = consumer_count
+            
+            # Get group state
+            for metric in self.metrics.get('kafka_consumer_group_state', []):
+                if metric['labels'].get('group') == group:
+                    state_map = {0: 'Unknown', 1: 'PreparingRebalance', 2: 'CompletingRebalance', 
+                                3: 'Stable', 4: 'Dead', 5: 'Empty'}
+                    event['consumer.group.state'] = state_map.get(int(metric['value']), 'Unknown')
+        
+        def _add_producer_metrics(self, event, topic, client_id):
+            """Add Producer specific metrics to event"""
+            # Get production rate
+            total_rate = 0
+            for metric in self.metrics.get('kafka_producer_record_send_rate', []):
+                labels = metric['labels']
+                if labels.get('topic') == topic and (client_id is None or labels.get('client_id') == client_id):
+                    total_rate += metric['value']
+            event['messages.in.rate'] = total_rate
+            event['producer.rate'] = total_rate
+            
+            # Get total records sent
+            for metric in self.metrics.get('kafka_producer_record_send_total', []):
+                labels = metric['labels']
+                if labels.get('topic') == topic and (client_id is None or labels.get('client_id') == client_id):
+                    event['messages.published'] += metric['value']
+            
+            # Get producer errors
+            error_count = 0
+            for metric in self.metrics.get('kafka_producer_record_error_total', []):
+                labels = metric['labels']
+                if labels.get('topic') == topic and (client_id is None or labels.get('client_id') == client_id):
+                    error_count += metric['value']
+            event['producer.errors'] = error_count
+            
+            # Calculate error rate
+            if total_rate > 0:
+                event['error.rate'] = (error_count / event.get('messages.published', 1)) * 60
+            
+            # Count active producers
+            producer_set = set()
+            for metric in self.metrics.get('kafka_producer_record_send_rate', []):
+                if metric['labels'].get('topic') == topic and metric['value'] > 0:
+                    producer_set.add(metric['labels'].get('client_id', 'unknown'))
+            event['producer.count'] = len(producer_set)
+        
+        def _add_broker_topic_metrics(self, event, topic):
+            """Add Broker/Topic health metrics to event"""
+            # Get topic partitions
+            partition_count = 0
+            for metric in self.metrics.get('kafka_topic_partitions', []):
+                if metric['labels'].get('topic') == topic:
+                    partition_count = int(metric['value'])
+            event['partition.count'] = partition_count
+            
+            # Get replication factor
+            for metric in self.metrics.get('kafka_topic_replication_factor', []):
+                if metric['labels'].get('topic') == topic:
+                    event['replication.factor'] = int(metric['value'])
+            
+            # Get broker count
+            broker_count = len(set(m['labels'].get('broker_id') 
+                                  for m in self.metrics.get('kafka_broker_info', [])))
+            event['broker.count'] = broker_count
+            
+            # Get bytes in/out rates
+            bytes_in = 0
+            bytes_out = 0
+            for metric in self.metrics.get('kafka_topic_bytes_in_rate', []):
+                if metric['labels'].get('topic') == topic:
+                    bytes_in += metric['value']
+            for metric in self.metrics.get('kafka_topic_bytes_out_rate', []):
+                if metric['labels'].get('topic') == topic:
+                    bytes_out += metric['value']
+            
+            event['queue.throughput.bytes'] = bytes_in + bytes_out
+            event['bytes.in.rate'] = bytes_in
+            event['bytes.out.rate'] = bytes_out
+            
+            # Get message rates
+            for metric in self.metrics.get('kafka_topic_messages_in_rate', []):
+                if metric['labels'].get('topic') == topic:
+                    event['messages.in.rate'] += metric['value']
+            
+            # Get under-replicated partitions (health indicator)
+            under_replicated = 0
+            for metric in self.metrics.get('kafka_topic_under_replicated_partitions', []):
+                if metric['labels'].get('topic') == topic:
+                    under_replicated = int(metric['value'])
+            
+            if under_replicated > 0:
+                event['health.status'] = 'degraded'
+                event['health.under_replicated_partitions'] = under_replicated
+
+    class KafkaEnhancedOHI:
+        """Main OHI implementation"""
+        
+        def __init__(self):
+            self.metrics_data = {}
+            self.events = []
+        
+        def collect_metrics(self):
+            """Collect metrics from Prometheus endpoint"""
+            try:
+                response = requests.get(PROMETHEUS_ENDPOINT, timeout=10)
+                response.raise_for_status()
+                
+                parser = MetricsParser()
+                self.metrics_data = parser.parse_prometheus_metrics(response.text)
+                logger.info(f"Collected {len(self.metrics_data)} metric types")
+                
+            except Exception as e:
+                logger.error(f"Failed to collect metrics: {e}")
+                raise
+        
+        def process_share_groups(self):
+            """Process Share Group metrics"""
+            if not COLLECT_SHARE_GROUPS:
+                return
+            
+            logger.info("Processing Share Group metrics...")
+            builder = QueueSampleBuilder(self.metrics_data)
+            
+            # Find all share group combinations
+            combinations = set()
+            for metric_name in ['kafka_sharegroup_records_unacked', 
+                               'kafka_sharegroup_records_acknowledged']:
+                for metric in self.metrics_data.get(metric_name, []):
+                    labels = metric['labels']
+                    if all(k in labels for k in ['group', 'topic', 'partition']):
+                        combinations.add((
+                            labels['group'],
+                            labels['topic'],
+                            labels['partition']
+                        ))
+            
+            # Create per-partition events
+            for group, topic, partition in combinations:
+                event = builder.build_share_group_event(group, topic, partition)
+                self.events.append(event)
+            
+            # Create aggregated topic-level events
+            topic_groups = defaultdict(list)
+            for group, topic, partition in combinations:
+                topic_groups[(group, topic)].append(partition)
+            
+            for (group, topic), partitions in topic_groups.items():
+                event = builder.build_share_group_event(group, topic)
+                event['partition.count'] = len(partitions)
+                self.events.append(event)
+        
+        def process_consumer_groups(self):
+            """Process Traditional Consumer Group metrics"""
+            if not COLLECT_CONSUMER_GROUPS:
+                return
+            
+            logger.info("Processing Consumer Group metrics...")
+            builder = QueueSampleBuilder(self.metrics_data)
+            
+            # Find all consumer group combinations
+            combinations = set()
+            for metric in self.metrics_data.get('kafka_consumer_lag', []):
+                labels = metric['labels']
+                if all(k in labels for k in ['group', 'topic', 'partition']):
+                    combinations.add((
+                        labels['group'],
+                        labels['topic'],
+                        labels['partition']
+                    ))
+            
+            # Create per-partition events
+            for group, topic, partition in combinations:
+                event = builder.build_consumer_group_event(group, topic, partition)
+                self.events.append(event)
+            
+            # Create aggregated topic-level events
+            topic_groups = defaultdict(list)
+            for group, topic, partition in combinations:
+                topic_groups[(group, topic)].append(partition)
+            
+            for (group, topic), partitions in topic_groups.items():
+                event = builder.build_consumer_group_event(group, topic)
+                event['partition.count'] = len(partitions)
+                self.events.append(event)
+        
+        def process_producers(self):
+            """Process Producer metrics"""
+            if not COLLECT_PRODUCERS:
+                return
+            
+            logger.info("Processing Producer metrics...")
+            builder = QueueSampleBuilder(self.metrics_data)
+            
+            # Find all topics with producer activity
+            topics = set()
+            for metric in self.metrics_data.get('kafka_producer_record_send_rate', []):
+                if metric['value'] > 0:
+                    topics.add(metric['labels'].get('topic'))
+            
+            # Create topic-level producer events
+            for topic in topics:
+                if topic:
+                    event = builder.build_producer_event(topic)
+                    self.events.append(event)
+        
+        def process_broker_health(self):
+            """Process Broker/Topic health metrics"""
+            if not COLLECT_BROKER_HEALTH:
+                return
+            
+            logger.info("Processing Broker/Topic health metrics...")
+            builder = QueueSampleBuilder(self.metrics_data)
+            
+            # Find all topics
+            topics = set()
+            for metric in self.metrics_data.get('kafka_topic_partitions', []):
+                topics.add(metric['labels'].get('topic'))
+            
+            # Create health events for each topic
+            for topic in topics:
+                if topic:
+                    event = builder.build_broker_topic_event(topic)
+                    self.events.append(event)
+        
+        def generate_output(self):
+            """Generate New Relic OHI output format"""
+            output = {
+                "name": ENTITY_NAME,
+                "integration_version": INTEGRATION_VERSION,
+                "protocol_version": PROTOCOL_VERSION,
+                "data": [{
+                    "entity": {
+                        "name": ENTITY_NAME,
+                        "type": "kafka-enhanced"
+                    },
+                    "metrics": self.events,
+                    "inventory": {
+                        "cluster": {
+                            "name": CLUSTER_NAME,
+                            "environment": ENVIRONMENT,
+                            "region": REGION,
+                            "provider": CLOUD_PROVIDER
+                        },
+                        "collection_modes": {
+                            "share_groups": COLLECT_SHARE_GROUPS,
+                            "consumer_groups": COLLECT_CONSUMER_GROUPS,
+                            "producers": COLLECT_PRODUCERS,
+                            "broker_health": COLLECT_BROKER_HEALTH
+                        },
+                        "metrics_collected": len(self.events)
+                    },
+                    "events": []
+                }]
+            }
+            
+            return output
+        
+        def run(self):
+            """Main execution"""
+            try:
+                # Collect metrics
+                self.collect_metrics()
+                
+                # Process each collection mode
+                self.process_share_groups()
+                self.process_consumer_groups()
+                self.process_producers()
+                self.process_broker_health()
+                
+                # Generate and output results
+                output = self.generate_output()
+                print(json.dumps(output))
+                
+                logger.info(f"Successfully generated {len(self.events)} QueueSample events")
+                
+            except Exception as e:
+                # Output error in New Relic format
+                error_output = {
+                    "name": ENTITY_NAME,
+                    "integration_version": INTEGRATION_VERSION,
+                    "protocol_version": PROTOCOL_VERSION,
+                    "data": [{
+                        "entity": {
+                            "name": ENTITY_NAME,
+                            "type": "kafka-enhanced"
+                        },
+                        "metrics": [],
+                        "inventory": {},
+                        "events": [{
+                            "eventType": "IntegrationError",
+                            "message": str(e),
+                            "timestamp": int(time.time()),
+                            "integration": ENTITY_NAME
+                        }]
+                    }]
+                }
+                print(json.dumps(error_output))
+                sys.exit(1)
+
+    def main():
+        """Entry point"""
+        ohi = KafkaEnhancedOHI()
+        ohi.run()
+
+    if __name__ == "__main__":
+        main()
+
+  # Wrapper script to handle requirements
+  run-enhanced-ohi.sh: |
+    #!/bin/bash
+    # Install dependencies if needed
+    if ! python3 -c "import requests" 2>/dev/null; then
+        pip3 install requests --quiet
+    fi
+    
+    # Run the enhanced OHI script
+    python3 /scripts/kafka-enhanced-ohi.py
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-enhanced-ohi-definition
+  namespace: ${KAFKA_NAMESPACE}
+data:
+  kafka-enhanced-definition.yml: |
+    name: com.newrelic.kafka-enhanced
+    description: Enhanced Kafka monitoring for Queues & Streams UI with all 4 collection modes
+    protocol_version: 3
+    os: linux
+    commands:
+      all_data:
+        command:
+          - /scripts/run-enhanced-ohi.sh
+        interval: 30

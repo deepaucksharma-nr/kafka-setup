@@ -1,0 +1,1285 @@
+{
+  "dashboardConfig": {
+    "name": "Intelligent Dashboard - 2025-06-03",
+    "description": "Auto-generated dashboard based on discovered metrics. Includes 2 event types and 4 metrics.",
+    "permissions": "PUBLIC_READ_WRITE",
+    "pages": [
+      {
+        "name": "Golden Signals Overview",
+        "description": "Key performance indicators based on Google SRE golden signals",
+        "widgets": [
+          {
+            "title": "Latency Trends (P95)",
+            "configuration": {
+              "line": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT percentile(request, 95) FROM KafkaBrokerSample TIMESERIES AUTO",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 1,
+              "row": 1,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "title": "Latency Distribution",
+            "configuration": {
+              "heatmap": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT histogram(request, 20, 10) FROM KafkaBrokerSample FACET appName",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 7,
+              "row": 1,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "title": "Traffic Volume",
+            "configuration": {
+              "area": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT rate(sum(broker), 1 minute) FROM KafkaBrokerSample TIMESERIES AUTO",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 1,
+              "row": 4,
+              "width": 8,
+              "height": 3
+            }
+          },
+          {
+            "title": "Traffic Distribution",
+            "configuration": {
+              "pie": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT sum(broker) FROM KafkaBrokerSample FACET appName SINCE 1 hour ago",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 9,
+              "row": 4,
+              "width": 4,
+              "height": 3
+            }
+          },
+          {
+            "title": "Error Rate",
+            "configuration": {
+              "line": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT percentage(count(*), WHERE request > 0) FROM KafkaBrokerSample TIMESERIES AUTO",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 1,
+              "row": 7,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "title": "Error Types",
+            "configuration": {
+              "bar": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT count(*) FROM KafkaBrokerSample WHERE request > 0 FACET error.class SINCE 1 hour ago",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 7,
+              "row": 7,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "title": "Resource Saturation",
+            "configuration": {
+              "billboard": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT latest(request) FROM KafkaBrokerSample",
+                    "accountId": 3630072
+                  },
+                  {
+                    "query": "SELECT latest(cpuPercent) FROM SystemSample",
+                    "accountId": 3630072
+                  },
+                  {
+                    "query": "SELECT latest(memoryUsedPercent) FROM SystemSample",
+                    "accountId": 3630072
+                  },
+                  {
+                    "query": "SELECT latest(diskUsedPercent) FROM SystemSample",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 1,
+              "row": 10,
+              "width": 12,
+              "height": 2
+            }
+          }
+        ]
+      },
+      {
+        "name": "Throughput Metrics",
+        "description": "Metrics related to throughput",
+        "widgets": []
+      },
+      {
+        "name": "Bytes Metrics",
+        "description": "Metrics related to bytes",
+        "widgets": []
+      },
+      {
+        "name": "Latency Metrics",
+        "description": "Metrics related to latency",
+        "widgets": []
+      },
+      {
+        "name": "Error Metrics",
+        "description": "Metrics related to error",
+        "widgets": []
+      },
+      {
+        "name": "Utilization Metrics",
+        "description": "Metrics related to utilization",
+        "widgets": []
+      },
+      {
+        "name": "Replication Metrics",
+        "description": "Metrics related to replication",
+        "widgets": []
+      },
+      {
+        "name": "Count Metrics",
+        "description": "Metrics related to count",
+        "widgets": []
+      },
+      {
+        "name": "Anomaly Detection",
+        "description": "Automatic anomaly detection for key metrics",
+        "widgets": [
+          {
+            "title": "Anomaly Detection - Key Metrics",
+            "configuration": {
+              "line": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT average(cpuPercent) as 'Current', average(cpuPercent) as 'Baseline' FROM SystemSample TIMESERIES AUTO COMPARE WITH 1 week ago",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 1,
+              "row": 1,
+              "width": 12,
+              "height": 3
+            }
+          }
+        ]
+      },
+      {
+        "name": "Metric Correlations",
+        "description": "Correlated metrics for root cause analysis",
+        "widgets": [
+          {
+            "title": "Correlation: traffic",
+            "configuration": {
+              "line": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT average(broker.bytesInPerSecond) as 'broker.bytesInPerSecond' FROM Transaction TIMESERIES AUTO",
+                    "accountId": 3630072
+                  },
+                  {
+                    "query": "SELECT average(broker.bytesOutPerSecond) as 'broker.bytesOutPerSecond' FROM Transaction TIMESERIES AUTO",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 1,
+              "row": 1,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "title": "Correlation: errors",
+            "configuration": {
+              "line": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT average(request.produceRequestsFailedPerSecond) as 'request.produceRequestsFailedPerSecond' FROM Transaction TIMESERIES AUTO",
+                    "accountId": 3630072
+                  },
+                  {
+                    "query": "SELECT average(consumer.requestsExpiredPerSecond) as 'consumer.requestsExpiredPerSecond' FROM Transaction TIMESERIES AUTO",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 7,
+              "row": 1,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "title": "Correlation: errors",
+            "configuration": {
+              "line": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT average(request.clientFetchesFailedPerSecond) as 'request.clientFetchesFailedPerSecond' FROM Transaction TIMESERIES AUTO",
+                    "accountId": 3630072
+                  },
+                  {
+                    "query": "SELECT average(consumer.requestsExpiredPerSecond) as 'consumer.requestsExpiredPerSecond' FROM Transaction TIMESERIES AUTO",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 1,
+              "row": 4,
+              "width": 6,
+              "height": 3
+            }
+          },
+          {
+            "title": "Correlation: errors",
+            "configuration": {
+              "line": {
+                "nrql_queries": [
+                  {
+                    "query": "SELECT average(newrelic.goldenmetrics.infra.kafkabroker.failedProduceRequestsPerSecond) as 'newrelic.goldenmetrics.infra.kafkabroker.failedProduceRequestsPerSecond' FROM Transaction TIMESERIES AUTO",
+                    "accountId": 3630072
+                  },
+                  {
+                    "query": "SELECT average(consumer.requestsExpiredPerSecond) as 'consumer.requestsExpiredPerSecond' FROM Transaction TIMESERIES AUTO",
+                    "accountId": 3630072
+                  }
+                ]
+              }
+            },
+            "layout": {
+              "column": 7,
+              "row": 4,
+              "width": 6,
+              "height": 3
+            }
+          }
+        ]
+      },
+      {
+        "name": "All Metrics Catalog",
+        "description": "Complete catalog of discovered metrics organized by intelligent categorization",
+        "widgets": [
+          {
+            "title": "📚 Complete Metrics Catalog",
+            "visualization": {
+              "id": "viz.markdown"
+            },
+            "layout": {
+              "column": 1,
+              "row": 1,
+              "height": 2,
+              "width": 12
+            },
+            "rawConfiguration": {
+              "text": "# Complete Metrics Catalog\n\n**Discovery Summary**\n- Total Metrics: 25\n- Event Types: 2\n- Categories: 7\n- Time Series Metrics: 21\n\n**Intelligent Categorization Applied**\n- **Throughput Metrics**: 4 metrics\n- **Bytes Metrics**: 5 metrics\n- **Latency Metrics**: 3 metrics\n- **Error Metrics**: 5 metrics\n- **Utilization Metrics**: 3 metrics\n- **Replication Metrics**: 4 metrics\n- **Count Metrics**: 1 metrics\n\n**Visualization Types**: Each category uses optimal chart types based on metric characteristics."
+            }
+          },
+          {
+            "title": "📈 Throughput Metrics - KafkaBrokerSample",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 1,
+              "row": 3,
+              "height": 3,
+              "width": 6
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT rate(sum(broker.messagesInPerSecond), 1 minute) as 'Messages In Per Second/min', rate(sum(broker.IOInPerSecond), 1 minute) as 'I O In Per Second/min', rate(sum(broker.IOOutPerSecond), 1 minute) as 'I O Out Per Second/min' FROM KafkaBrokerSample TIMESERIES AUTO SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "📈 Throughput Metrics - Metric",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 7,
+              "row": 3,
+              "height": 3,
+              "width": 6
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT rate(sum(newrelic.goldenmetrics.infra.kafkabroker.incomingMessagesPerSecond), 1 minute) as 'Incoming Messages Per Second/min' FROM Metric WHERE metricName IN ('newrelic.goldenmetrics.infra.kafkabroker.incomingMessagesPerSecond') TIMESERIES AUTO SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "💾 Bytes Metrics - KafkaBrokerSample",
+            "visualization": {
+              "id": "viz.area"
+            },
+            "layout": {
+              "column": 1,
+              "row": 7,
+              "height": 3,
+              "width": 6
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT rate(sum(broker.bytesInPerSecond), 1 minute) as 'Bytes In Per Second/min', rate(sum(broker.bytesOutPerSecond), 1 minute) as 'Bytes Out Per Second/min' FROM KafkaBrokerSample TIMESERIES AUTO SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "💾 Bytes Metrics - SystemSample",
+            "visualization": {
+              "id": "viz.area"
+            },
+            "layout": {
+              "column": 7,
+              "row": 7,
+              "height": 3,
+              "width": 6
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT rate(sum(memoryUsedPercent), 1 minute) as 'Memory Used Percent/min', rate(sum(networkReceiveBytesPerSecond), 1 minute) as 'Network Receive Bytes Per Second/min', rate(sum(networkTransmitBytesPerSecond), 1 minute) as 'Network Transmit Bytes Per Second/min' FROM SystemSample TIMESERIES AUTO SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "⏱️ Latency Metrics - KafkaBrokerSample",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 1,
+              "row": 11,
+              "height": 3,
+              "width": 6
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT percentile(request.avgTimeFetch, 95) as 'Avg Time Fetch P95', percentile(request.avgTimeProduceRequest, 95) as 'Avg Time Produce Request P95' FROM KafkaBrokerSample TIMESERIES AUTO SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "⏱️ Latency Metrics - Metric",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 7,
+              "row": 11,
+              "height": 3,
+              "width": 6
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT percentile(newrelic.goldenmetrics.infra.kafkabroker.produceRequestDuration99PercentileS, 95) as 'Produce Request Duration99 Percentile S P95' FROM Metric WHERE metricName IN ('newrelic.goldenmetrics.infra.kafkabroker.produceRequestDuration99PercentileS') TIMESERIES AUTO SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "❌ Error Metrics - KafkaBrokerSample",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 1,
+              "row": 15,
+              "height": 3,
+              "width": 8
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT sum(request.produceRequestsFailedPerSecond) as 'Produce Requests Failed Per Second', sum(request.clientFetchesFailedPerSecond) as 'Client Fetches Failed Per Second', sum(consumer.requestsExpiredPerSecond) as 'Requests Expired Per Second', sum(net.bytesRejectedPerSecond) as 'Bytes Rejected Per Second' FROM KafkaBrokerSample TIMESERIES AUTO SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "❌ Error Metrics - Metric",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 9,
+              "row": 15,
+              "height": 3,
+              "width": 6
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT sum(newrelic.goldenmetrics.infra.kafkabroker.failedProduceRequestsPerSecond) as 'Failed Produce Requests Per Second' FROM Metric WHERE metricName IN ('newrelic.goldenmetrics.infra.kafkabroker.failedProduceRequestsPerSecond') TIMESERIES AUTO SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "🔥 Utilization Metrics - KafkaBrokerSample",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 1,
+              "row": 19,
+              "height": 3,
+              "width": 6
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT average(request.handlerIdle) as 'Handler Idle' FROM KafkaBrokerSample  SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "🔥 Utilization Metrics - SystemSample",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 7,
+              "row": 19,
+              "height": 3,
+              "width": 6
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT average(cpuPercent) as 'Cpu Percent', average(diskUsedPercent) as 'Disk Used Percent' FROM SystemSample  SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "🔄 Replication Metrics - KafkaBrokerSample",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 1,
+              "row": 23,
+              "height": 3,
+              "width": 6
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT average(replication.unreplicatedPartitions) as 'Unreplicated Partitions', average(replication.isrShrinksPerSecond) as 'Isr Shrinks Per Second', average(replication.isrExpandsPerSecond) as 'Isr Expands Per Second' FROM KafkaBrokerSample  SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "🔄 Replication Metrics - Metric",
+            "visualization": {
+              "id": "viz.line"
+            },
+            "layout": {
+              "column": 7,
+              "row": 23,
+              "height": 3,
+              "width": 6
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT average(newrelic.goldenmetrics.infra.kafkabroker.leaderElectionRate) as 'Leader Election Rate' FROM Metric WHERE metricName IN ('newrelic.goldenmetrics.infra.kafkabroker.leaderElectionRate')  SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "🔢 Count Metrics - KafkaBrokerSample",
+            "visualization": {
+              "id": "viz.billboard"
+            },
+            "layout": {
+              "column": 1,
+              "row": 27,
+              "height": 3,
+              "width": 2
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT sum(connection.count) as 'Count' FROM KafkaBrokerSample  SINCE 1 hour ago"
+                }
+              ]
+            }
+          },
+          {
+            "title": "📊 All Metrics Summary Table",
+            "visualization": {
+              "id": "viz.table"
+            },
+            "layout": {
+              "column": 1,
+              "row": 31,
+              "height": 5,
+              "width": 12
+            },
+            "rawConfiguration": {
+              "nrqlQueries": [
+                {
+                  "accountId": 3630072,
+                  "query": "SELECT latest(broker.messagesInPerSecond) as 'Messages In Per Second', latest(broker.IOInPerSecond) as 'I O In Per Second', latest(broker.IOOutPerSecond) as 'I O Out Per Second', latest(memoryUsedPercent) as 'Memory Used Percent', latest(networkReceiveBytesPerSecond) as 'Network Receive Bytes Per Second', latest(networkTransmitBytesPerSecond) as 'Network Transmit Bytes Per Second' FROM KafkaBrokerSample SINCE 5 minutes ago LIMIT 100"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "eventTypes": {
+      "KafkaBrokerSample": {
+        "name": "KafkaBrokerSample",
+        "attributes": [
+          {
+            "name": "broker.messagesInPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "broker.bytesInPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "broker.bytesOutPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "broker.IOInPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "broker.IOOutPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "request.avgTimeFetch",
+            "type": "number"
+          },
+          {
+            "name": "request.avgTimeProduceRequest",
+            "type": "number"
+          },
+          {
+            "name": "request.produceRequestsFailedPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "request.clientFetchesFailedPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "request.handlerIdle",
+            "type": "number"
+          },
+          {
+            "name": "replication.unreplicatedPartitions",
+            "type": "number"
+          },
+          {
+            "name": "replication.isrShrinksPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "replication.isrExpandsPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "consumer.requestsExpiredPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "connection.count",
+            "type": "number"
+          },
+          {
+            "name": "net.bytesRejectedPerSecond",
+            "type": "number"
+          }
+        ],
+        "volume": 126,
+        "timeRange": {
+          "start": "2025-06-03T13:39:24.875Z",
+          "end": "2025-06-03T14:39:24.875Z"
+        }
+      },
+      "SystemSample": {
+        "name": "SystemSample",
+        "attributes": [
+          {
+            "name": "cpuPercent",
+            "type": "number"
+          },
+          {
+            "name": "memoryUsedPercent",
+            "type": "number"
+          },
+          {
+            "name": "diskUsedPercent",
+            "type": "number"
+          },
+          {
+            "name": "networkReceiveBytesPerSecond",
+            "type": "number"
+          },
+          {
+            "name": "networkTransmitBytesPerSecond",
+            "type": "number"
+          }
+        ],
+        "volume": 68,
+        "timeRange": {
+          "start": "2025-06-03T13:39:24.876Z",
+          "end": "2025-06-03T14:39:24.876Z"
+        }
+      }
+    },
+    "metrics": {
+      "newrelic.goldenmetrics.infra.kafkabroker.leaderElectionRate": {
+        "name": "newrelic.goldenmetrics.infra.kafkabroker.leaderElectionRate",
+        "type": "metric",
+        "unit": "per_second",
+        "category": "replication"
+      },
+      "newrelic.goldenmetrics.infra.kafkabroker.produceRequestDuration99PercentileS": {
+        "name": "newrelic.goldenmetrics.infra.kafkabroker.produceRequestDuration99PercentileS",
+        "type": "metric",
+        "unit": "seconds",
+        "category": "latency"
+      },
+      "newrelic.goldenmetrics.infra.kafkabroker.failedProduceRequestsPerSecond": {
+        "name": "newrelic.goldenmetrics.infra.kafkabroker.failedProduceRequestsPerSecond",
+        "type": "metric",
+        "unit": "per_second",
+        "category": "error"
+      },
+      "newrelic.goldenmetrics.infra.kafkabroker.incomingMessagesPerSecond": {
+        "name": "newrelic.goldenmetrics.infra.kafkabroker.incomingMessagesPerSecond",
+        "type": "metric",
+        "unit": "per_second",
+        "category": "throughput"
+      }
+    },
+    "categories": {
+      "throughput": [
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "broker.messagesInPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "broker.IOInPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "broker.IOOutPerSecond",
+          "type": "number"
+        },
+        {
+          "metricName": "newrelic.goldenmetrics.infra.kafkabroker.incomingMessagesPerSecond",
+          "type": "metric",
+          "unit": "per_second"
+        }
+      ],
+      "bytes": [
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "broker.bytesInPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "broker.bytesOutPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "SystemSample",
+          "attribute": "memoryUsedPercent",
+          "type": "number"
+        },
+        {
+          "eventType": "SystemSample",
+          "attribute": "networkReceiveBytesPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "SystemSample",
+          "attribute": "networkTransmitBytesPerSecond",
+          "type": "number"
+        }
+      ],
+      "latency": [
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "request.avgTimeFetch",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "request.avgTimeProduceRequest",
+          "type": "number"
+        },
+        {
+          "metricName": "newrelic.goldenmetrics.infra.kafkabroker.produceRequestDuration99PercentileS",
+          "type": "metric",
+          "unit": "seconds"
+        }
+      ],
+      "error": [
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "request.produceRequestsFailedPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "request.clientFetchesFailedPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "consumer.requestsExpiredPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "net.bytesRejectedPerSecond",
+          "type": "number"
+        },
+        {
+          "metricName": "newrelic.goldenmetrics.infra.kafkabroker.failedProduceRequestsPerSecond",
+          "type": "metric",
+          "unit": "per_second"
+        }
+      ],
+      "utilization": [
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "request.handlerIdle",
+          "type": "number"
+        },
+        {
+          "eventType": "SystemSample",
+          "attribute": "cpuPercent",
+          "type": "number"
+        },
+        {
+          "eventType": "SystemSample",
+          "attribute": "diskUsedPercent",
+          "type": "number"
+        }
+      ],
+      "replication": [
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "replication.unreplicatedPartitions",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "replication.isrShrinksPerSecond",
+          "type": "number"
+        },
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "replication.isrExpandsPerSecond",
+          "type": "number"
+        },
+        {
+          "metricName": "newrelic.goldenmetrics.infra.kafkabroker.leaderElectionRate",
+          "type": "metric",
+          "unit": "per_second"
+        }
+      ],
+      "count": [
+        {
+          "eventType": "KafkaBrokerSample",
+          "attribute": "connection.count",
+          "type": "number"
+        }
+      ]
+    },
+    "timeSeries": [
+      {
+        "metric": "KafkaBrokerSample.broker.messagesInPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.broker.bytesInPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.broker.bytesOutPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.broker.IOInPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.broker.IOOutPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.request.avgTimeFetch",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.request.avgTimeProduceRequest",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.request.produceRequestsFailedPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.request.clientFetchesFailedPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.request.handlerIdle",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.replication.unreplicatedPartitions",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.replication.isrShrinksPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.replication.isrExpandsPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.consumer.requestsExpiredPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.connection.count",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "KafkaBrokerSample.net.bytesRejectedPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "SystemSample.cpuPercent",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "SystemSample.memoryUsedPercent",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "SystemSample.diskUsedPercent",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "SystemSample.networkReceiveBytesPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      },
+      {
+        "metric": "SystemSample.networkTransmitBytesPerSecond",
+        "aggregations": [
+          "average",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ]
+      }
+    ],
+    "aggregations": [
+      {
+        "eventType": "KafkaBrokerSample",
+        "attribute": "broker.messagesInPerSecond",
+        "type": "number"
+      },
+      {
+        "eventType": "KafkaBrokerSample",
+        "attribute": "broker.IOInPerSecond",
+        "type": "number"
+      },
+      {
+        "eventType": "KafkaBrokerSample",
+        "attribute": "broker.IOOutPerSecond",
+        "type": "number"
+      },
+      {
+        "metricName": "newrelic.goldenmetrics.infra.kafkabroker.incomingMessagesPerSecond",
+        "type": "metric",
+        "unit": "per_second"
+      },
+      {
+        "eventType": "KafkaBrokerSample",
+        "attribute": "broker.bytesInPerSecond",
+        "type": "number"
+      },
+      {
+        "eventType": "KafkaBrokerSample",
+        "attribute": "broker.bytesOutPerSecond",
+        "type": "number"
+      },
+      {
+        "eventType": "SystemSample",
+        "attribute": "memoryUsedPercent",
+        "type": "number"
+      },
+      {
+        "eventType": "SystemSample",
+        "attribute": "networkReceiveBytesPerSecond",
+        "type": "number"
+      },
+      {
+        "eventType": "SystemSample",
+        "attribute": "networkTransmitBytesPerSecond",
+        "type": "number"
+      },
+      {
+        "eventType": "KafkaBrokerSample",
+        "attribute": "connection.count",
+        "type": "number"
+      }
+    ],
+    "dimensions": [],
+    "goldenSignals": {
+      "latency": [
+        "KafkaBrokerSample.request.avgTimeFetch",
+        "KafkaBrokerSample.request.avgTimeProduceRequest"
+      ],
+      "traffic": [
+        "KafkaBrokerSample.broker.messagesInPerSecond",
+        "KafkaBrokerSample.broker.bytesInPerSecond",
+        "KafkaBrokerSample.broker.bytesOutPerSecond",
+        "KafkaBrokerSample.broker.IOInPerSecond",
+        "KafkaBrokerSample.broker.IOOutPerSecond",
+        "KafkaBrokerSample.request.avgTimeFetch",
+        "KafkaBrokerSample.request.avgTimeProduceRequest",
+        "KafkaBrokerSample.request.produceRequestsFailedPerSecond",
+        "KafkaBrokerSample.request.clientFetchesFailedPerSecond",
+        "KafkaBrokerSample.request.handlerIdle",
+        "KafkaBrokerSample.replication.isrShrinksPerSecond",
+        "KafkaBrokerSample.replication.isrExpandsPerSecond",
+        "KafkaBrokerSample.consumer.requestsExpiredPerSecond",
+        "KafkaBrokerSample.net.bytesRejectedPerSecond",
+        "SystemSample.networkReceiveBytesPerSecond",
+        "SystemSample.networkTransmitBytesPerSecond"
+      ],
+      "errors": [
+        "KafkaBrokerSample.request.produceRequestsFailedPerSecond",
+        "KafkaBrokerSample.request.clientFetchesFailedPerSecond",
+        "KafkaBrokerSample.consumer.requestsExpiredPerSecond",
+        "KafkaBrokerSample.net.bytesRejectedPerSecond"
+      ],
+      "saturation": [
+        "KafkaBrokerSample.request.handlerIdle",
+        "SystemSample.cpuPercent",
+        "SystemSample.memoryUsedPercent",
+        "SystemSample.diskUsedPercent"
+      ]
+    }
+  },
+  "correlations": {
+    "strong": [
+      {
+        "metric1": "broker.bytesInPerSecond",
+        "metric2": "broker.bytesOutPerSecond",
+        "type": "traffic",
+        "confidence": 0.8
+      },
+      {
+        "metric1": "request.produceRequestsFailedPerSecond",
+        "metric2": "consumer.requestsExpiredPerSecond",
+        "type": "errors",
+        "confidence": 0.8
+      },
+      {
+        "metric1": "request.clientFetchesFailedPerSecond",
+        "metric2": "consumer.requestsExpiredPerSecond",
+        "type": "errors",
+        "confidence": 0.8
+      },
+      {
+        "metric1": "newrelic.goldenmetrics.infra.kafkabroker.failedProduceRequestsPerSecond",
+        "metric2": "consumer.requestsExpiredPerSecond",
+        "type": "errors",
+        "confidence": 0.8
+      }
+    ],
+    "moderate": [],
+    "inverse": []
+  },
+  "insights": [
+    {
+      "type": "recommendation",
+      "severity": "high",
+      "message": "Consider creating error rate alerts based on traffic volume",
+      "metrics": [
+        "KafkaBrokerSample.request.produceRequestsFailedPerSecond",
+        "KafkaBrokerSample.request.clientFetchesFailedPerSecond",
+        "KafkaBrokerSample.consumer.requestsExpiredPerSecond",
+        "KafkaBrokerSample.net.bytesRejectedPerSecond",
+        "KafkaBrokerSample.broker.messagesInPerSecond",
+        "KafkaBrokerSample.broker.bytesInPerSecond",
+        "KafkaBrokerSample.broker.bytesOutPerSecond",
+        "KafkaBrokerSample.broker.IOInPerSecond",
+        "KafkaBrokerSample.broker.IOOutPerSecond",
+        "KafkaBrokerSample.request.avgTimeFetch",
+        "KafkaBrokerSample.request.avgTimeProduceRequest",
+        "KafkaBrokerSample.request.produceRequestsFailedPerSecond",
+        "KafkaBrokerSample.request.clientFetchesFailedPerSecond",
+        "KafkaBrokerSample.request.handlerIdle",
+        "KafkaBrokerSample.replication.isrShrinksPerSecond",
+        "KafkaBrokerSample.replication.isrExpandsPerSecond",
+        "KafkaBrokerSample.consumer.requestsExpiredPerSecond",
+        "KafkaBrokerSample.net.bytesRejectedPerSecond",
+        "SystemSample.networkReceiveBytesPerSecond",
+        "SystemSample.networkTransmitBytesPerSecond"
+      ]
+    },
+    {
+      "type": "correlation",
+      "severity": "medium",
+      "message": "Found 4 strong metric correlations that can help with root cause analysis",
+      "correlations": [
+        {
+          "metric1": "broker.bytesInPerSecond",
+          "metric2": "broker.bytesOutPerSecond",
+          "type": "traffic",
+          "confidence": 0.8
+        },
+        {
+          "metric1": "request.produceRequestsFailedPerSecond",
+          "metric2": "consumer.requestsExpiredPerSecond",
+          "type": "errors",
+          "confidence": 0.8
+        },
+        {
+          "metric1": "request.clientFetchesFailedPerSecond",
+          "metric2": "consumer.requestsExpiredPerSecond",
+          "type": "errors",
+          "confidence": 0.8
+        },
+        {
+          "metric1": "newrelic.goldenmetrics.infra.kafkabroker.failedProduceRequestsPerSecond",
+          "metric2": "consumer.requestsExpiredPerSecond",
+          "type": "errors",
+          "confidence": 0.8
+        }
+      ]
+    }
+  ]
+}
